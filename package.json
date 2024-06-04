@@ -1,8 +1,8 @@
 {
   "name": "blogging-platform-backend",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "Simple NestJS GraphQL Backend",
+  "author": "Nadun Gunawardana",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
