@@ -3,6 +3,7 @@ import { InjectModel, Model } from 'nestjs-dynamoose';
 import { v4 as uuid } from 'uuid';
 import { User, UserKey } from '../../common/interfaces/user.interface';
 import { CreateUserDto } from './dto/create-user.dto';
+import { GetUserDto } from './dto/get-user.dto';
 
 @Injectable()
 export class UserService {
@@ -10,12 +11,12 @@ export class UserService {
     @InjectModel('Users') private readonly userModel: Model<User, UserKey>,
   ) {}
 
-  async createUser(createUserDto: CreateUserDto): Promise<User> {
+  async createUser(createUserDto: CreateUserDto): Promise<GetUserDto> {
     const userId = uuid();
     return await this.userModel.create({ id: userId, ...createUserDto });
   }
 
-  async findById(id: string): Promise<User | null> {
+  async findById(id: string): Promise<GetUserDto | null> {
     return await this.userModel.get({ id });
   }
 
@@ -27,7 +28,7 @@ export class UserService {
     return userMatches[0];
   }
 
-  async getAllUsers(): Promise<User[]> {
+  async getAllUsers(): Promise<GetUserDto[]> {
     return await this.userModel.scan().exec();
   }
 }

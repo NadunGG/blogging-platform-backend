@@ -1,6 +1,6 @@
 import * as dynamoose from 'dynamoose';
 
-const PostSchema = new dynamoose.Schema(
+export const PostSchema = new dynamoose.Schema(
   {
     id: {
       type: String,
@@ -28,6 +28,4 @@ const PostSchema = new dynamoose.Schema(
   { timestamps: true },
 );
 
-const PostTable = dynamoose.model('Posts', PostSchema);
-
-export { PostTable, PostSchema };
+export const PostTable = dynamoose.model('Posts', PostSchema);
