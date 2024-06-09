@@ -4,11 +4,16 @@ import { v4 as uuid } from 'uuid';
 import { User, UserKey } from '../../common/interfaces/user.interface';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUserDto } from './dto/get-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { S3Service } from '../s3/s3.service';
+import { UploadFile } from '../../common/interfaces/upload-file.interface';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectModel('Users') private readonly userModel: Model<User, UserKey>,
+    @InjectModel('Users')
+    private readonly userModel: Model<User, UserKey>,
+    private readonly s3Service: S3Service,
   ) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<GetUserDto> {
@@ -30,5 +35,18 @@ export class UserService {
 
   async getAllUsers(): Promise<GetUserDto[]> {
     return await this.userModel.scan().exec();
+  }
+
+  async uploadProfileImage(file: UploadFile, userId: string): Promise<string> {
+    const imageUrl = await this.s3Service.uploadFile(file);
+    await this.userModel.update({ id: userId }, { profileImage: imageUrl });
+    return imageUrl;
+  }
+
+  async updateUser(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<GetUserDto> {
+    return await this.userModel.update({ id }, updateUserDto);
   }
 }

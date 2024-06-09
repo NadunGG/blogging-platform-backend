@@ -3,8 +3,11 @@ import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update.post.dto';
 import { Post } from './models/post.model';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/auth.guard';
 
 @Resolver('Post')
+@UseGuards(JwtAuthGuard)
 export class PostResolver {
   constructor(private readonly postService: PostService) {}
 
