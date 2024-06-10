@@ -1,8 +1,10 @@
+org: nadunapps
+app: blogging-platform-backend
 service: blogging-platform
 
 provider:
   name: aws
-  runtime: nodejs16.x
+  runtime: nodejs20.x
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-1'}
   environment:
@@ -11,6 +13,8 @@ provider:
     REGION: ${self:provider.region}
     NO_COLOR: ${env:NO_COLOR, 'true'}
     IS_DDB_LOCAL: ${env:IS_DDB_LOCAL, 'false'}
+  apiGateway:
+    shouldStartNameWithService: true  
   iam:
     role:
       statements:
@@ -42,7 +46,7 @@ custom:
 
 functions:
   index-function:
-    handler: src/main.handler
+    handler: src/index.handler
     events:
       - http:
           cors: true
