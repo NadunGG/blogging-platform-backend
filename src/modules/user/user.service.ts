@@ -1,14 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel, Model } from 'nestjs-dynamoose';
+import { InjectModel, Model, Scan } from 'nestjs-dynamoose';
 import { v4 as uuid } from 'uuid';
 import { User, UserKey } from '../../common/interfaces/user.interface';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUserDto } from './dto/get-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { S3Service } from '../s3/s3.service';
+import { UploadFile } from '../../common/interfaces/upload-file.interface';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectModel('Users') private readonly userModel: Model<User, UserKey>,
+    @InjectModel('Users')
+    private readonly userModel: Model<User, UserKey>,
+    private readonly s3Service: S3Service,
   ) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<GetUserDto> {
@@ -28,7 +33,34 @@ export class UserService {
     return userMatches[0];
   }
 
-  async getAllUsers(): Promise<GetUserDto[]> {
-    return await this.userModel.scan().exec();
+  async getAllUsers(
+    limit: number,
+    lastKey?: string,
+  ): Promise<{ items: User[]; lastKey?: string }> {
+    let scan: Scan<User, UserKey> = this.userModel.scan();
+
+    if (lastKey) {
+      scan = scan.startAt({ id: lastKey });
+    }
+
+    const result = await scan.limit(limit).exec();
+
+    return {
+      items: result,
+      lastKey: result.lastKey ? result.lastKey.id : undefined,
+    };
+  }
+
+  async uploadProfileImage(file: UploadFile, userId: string): Promise<string> {
+    const imageUrl = await this.s3Service.uploadFile(file);
+    await this.userModel.update({ id: userId }, { profileImage: imageUrl });
+    return imageUrl;
+  }
+
+  async updateUser(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<GetUserDto> {
+    return await this.userModel.update({ id }, updateUserDto);
   }
 }

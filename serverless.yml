@@ -1,8 +1,8 @@
-service: blogging-platform
+service: blogging-platform-backend
 
 provider:
   name: aws
-  runtime: nodejs16.x
+  runtime: nodejs20.x
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-1'}
   environment:
@@ -11,6 +11,9 @@ provider:
     REGION: ${self:provider.region}
     NO_COLOR: ${env:NO_COLOR, 'true'}
     IS_DDB_LOCAL: ${env:IS_DDB_LOCAL, 'false'}
+    BUCKET_NAME: ${self:service}-${self:provider.stage}-profile-avatar
+  apiGateway:
+    shouldStartNameWithService: true  
   iam:
     role:
       statements:
@@ -23,10 +26,15 @@ provider:
             - dynamodb:PutItem
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
-          Resource: arn:aws:dynamodb:${self:provider.region}:*:*
+            - s3:PutObject
+            - s3:GetObject
+            - s3:DeleteObject
+            - s3:PutBucketPolicy
+          Resource: 
+            - arn:aws:dynamodb:${self:provider.region}:*:*
+            - arn:aws:s3:::${self:provider.environment.BUCKET_NAME}/*
 
 plugins:
-  - serverless-plugin-typescript
   - serverless-dynamodb-local
   - serverless-offline
 
@@ -42,7 +50,7 @@ custom:
 
 functions:
   index-function:
-    handler: src/main.handler
+    handler: src/index.handler
     events:
       - http:
           cors: true
@@ -51,3 +59,20 @@ functions:
 
 resources:
   - ${file(resource/dynamodb.yml)}
+  - Resources:
+      S3Bucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName: ${self:provider.environment.BUCKET_NAME}
+      S3BucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+          Bucket: ${self:provider.environment.BUCKET_NAME}
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Principal: "*"
+                Action:
+                  - "s3:GetObject"
+                Resource: arn:aws:s3:::${self:provider.environment.BUCKET_NAME}/*
