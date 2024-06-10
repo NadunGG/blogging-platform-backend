@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel, Model } from 'nestjs-dynamoose';
+import { InjectModel, Model, Scan } from 'nestjs-dynamoose';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update.post.dto';
 import { v4 as uuid } from 'uuid';
@@ -38,8 +38,29 @@ export class PostService {
     await this.postModel.delete({ id: postId });
   }
 
-  async getAllPosts(): Promise<Post[]> {
-    return await this.postModel.scan().exec();
+  async getAllPosts(
+    limit: number,
+    lastKey?: string,
+    tagFilter?: string,
+  ): Promise<{ items: Post[]; lastKey?: string }> {
+    let scan: Scan<Post, PostKey>;
+
+    if (tagFilter) {
+      scan = this.postModel.scan('tags').contains(tagFilter);
+    } else {
+      scan = this.postModel.scan();
+    }
+
+    if (lastKey) {
+      scan = scan.startAt({ id: lastKey });
+    }
+
+    const result = await scan.limit(limit).exec();
+
+    return {
+      items: result,
+      lastKey: result.lastKey ? result.lastKey.id : undefined,
+    };
   }
 
   async getPostById(postId: string): Promise<Post> {

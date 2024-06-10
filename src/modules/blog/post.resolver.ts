@@ -5,6 +5,7 @@ import { UpdatePostDto } from './dto/update.post.dto';
 import { Post } from './models/post.model';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/auth.guard';
+import { PaginatedPosts } from './dto/paginated-posts.dto';
 
 @Resolver('Post')
 @UseGuards(JwtAuthGuard)
@@ -27,9 +28,19 @@ export class PostResolver {
     return true;
   }
 
-  @Query(() => [Post])
-  async getAllPosts() {
-    return this.postService.getAllPosts();
+  @Query(() => PaginatedPosts)
+  async getAllPosts(
+    @Args('limit', { type: () => Number, defaultValue: 10 }) limit: number,
+    @Args('lastKey', { type: () => String, nullable: true }) lastKey?: string,
+    @Args('tagFilter', { type: () => String, nullable: true })
+    tagFilter?: string,
+  ): Promise<PaginatedPosts> {
+    const { items, lastKey: nextKey } = await this.postService.getAllPosts(
+      limit,
+      lastKey,
+      tagFilter,
+    );
+    return { items, lastKey: nextKey };
   }
 
   @Query(() => Post)

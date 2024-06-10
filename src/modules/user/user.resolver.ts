@@ -4,7 +4,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './models/user.model';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/auth.guard';
-import GraphQLUpload, { FileUpload } from 'graphql-upload/GraphQLUpload.mjs';
+import { GraphQLUpload, FileUpload } from 'graphql-upload-ts';
+import { PaginatedUsers } from './dto/paginated-users.dto';
 
 @Resolver('User')
 export class UserResolver {
@@ -46,8 +47,15 @@ export class UserResolver {
     return this.userService.findById(id);
   }
 
-  @Query(() => [User])
-  async getAllUsers() {
-    return this.userService.getAllUsers();
+  @Query(() => [PaginatedUsers])
+  async getAllUsers(
+    @Args('limit', { type: () => Number, defaultValue: 10 }) limit: number,
+    @Args('lastKey', { type: () => String, nullable: true }) lastKey?: string,
+  ): Promise<PaginatedUsers> {
+    const { items, lastKey: nextKey } = await this.userService.getAllUsers(
+      limit,
+      lastKey,
+    );
+    return { items, lastKey: nextKey };
   }
 }

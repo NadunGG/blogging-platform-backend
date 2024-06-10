@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel, Model } from 'nestjs-dynamoose';
+import { InjectModel, Model, Scan } from 'nestjs-dynamoose';
 import { v4 as uuid } from 'uuid';
 import { User, UserKey } from '../../common/interfaces/user.interface';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -33,8 +33,22 @@ export class UserService {
     return userMatches[0];
   }
 
-  async getAllUsers(): Promise<GetUserDto[]> {
-    return await this.userModel.scan().exec();
+  async getAllUsers(
+    limit: number,
+    lastKey?: string,
+  ): Promise<{ items: User[]; lastKey?: string }> {
+    let scan: Scan<User, UserKey> = this.userModel.scan();
+
+    if (lastKey) {
+      scan = scan.startAt({ id: lastKey });
+    }
+
+    const result = await scan.limit(limit).exec();
+
+    return {
+      items: result,
+      lastKey: result.lastKey ? result.lastKey.id : undefined,
+    };
   }
 
   async uploadProfileImage(file: UploadFile, userId: string): Promise<string> {

@@ -12,5 +12,11 @@ export class Post {
   body: string;
 
   @Field(() => [String], { nullable: true })
-  tags: string[];
+  tags?: string[];
+
+  @Field()
+  createdAt?: string;
+
+  @Field()
+  updatedAt?: string;
 }
